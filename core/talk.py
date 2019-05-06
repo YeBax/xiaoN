@@ -4,7 +4,7 @@ from words import STOP_WORDS_LIST, YES_WORDS_LIST, NO_WORDS_LIST
 
 
 class Talk:
-    def __init__(self, user_id, talk_msg, talk_time, talk_type):
+    def __init__(self, user_id, talk_msg, talk_time):
         """
         独立对话 初始化，
         talk类只处理句子
@@ -14,12 +14,10 @@ class Talk:
         self.msg_id = None
         self.talk_msg = talk_msg
         self.talk_time = talk_time
-        self.talk_type = talk_type
         self.words_list = []
         self.keywords_list = []
 
-    def run(self):
-        pass
+        self.__run()
 
     def get_msg_id(self):
         """
@@ -28,6 +26,13 @@ class Talk:
         """
         self.msg_id = uuid.uuid3(uuid.NAMESPACE_URL, self.user_id)
         return self.msg_id
+
+    def get_keywords_list(self):
+        return self.keywords_list
+
+    def __run(self):
+        self.__talk_to_words()
+        self.__stop_words()
 
     def __talk_to_words(self):
         """
@@ -43,6 +48,23 @@ class Talk:
         :return: 关键词列表
         """
         self.keywords_list = list(set([i for i in self.words_list if i not in STOP_WORDS_LIST or len(i) > 2]))
+
+
+class Questions:
+    def __init__(self, questions_list):
+        self.questions_list = questions_list
+        self.questions_dict = {}
+
+    def get_questions_dict(self):
+        for talks in self.questions_list:
+            words_list = jieba.cut(talks.strip(), cut_all=True, HMM=True)
+            keywords_list = list(set([i for i in words_list if i not in STOP_WORDS_LIST or len(i) > 2]))
+            if talks in self.questions_dict:
+                continue
+            self.questions_dict[talks] = keywords_list
+
+        return self.questions_dict
+
 
 
 
