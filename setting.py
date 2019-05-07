@@ -16,3 +16,15 @@ YES_WORDS_PATH = os.path.join(DATA_PATH, 'yes_words.txt')
 NO_WORDS_PATH = os.path.join(DATA_PATH, 'no_words.txt')
 
 # ----------------------------------------------------------------------
+# data base info
+MYSQL_INFO = {
+    "host": "127.0.0.1",
+    "user": "root",
+    "password": "123456",
+    "database": "",
+    "charset": "utf8"
+}
+
+REDIS_INFO = {
+
+}

@@ -4,7 +4,7 @@ from words import STOP_WORDS_LIST, YES_WORDS_LIST, NO_WORDS_LIST
 
 
 class Talk:
-    def __init__(self, user_id, talk_msg, talk_time):
+    def __init__(self, user_id, talk_msg):
         """
         独立对话 初始化，
         talk类只处理句子
@@ -13,7 +13,6 @@ class Talk:
         self.user_id = user_id
         self.msg_id = None
         self.talk_msg = talk_msg
-        self.talk_time = talk_time
         self.words_list = []
         self.keywords_list = []
 
