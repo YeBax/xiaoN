@@ -2,37 +2,42 @@ import pymysql
 import redis
 from setting import MYSQL_INFO, REDIS_INFO
 
-mysql_conn = pymysql.connect(MYSQL_INFO)
+# test
+from setting import SQL_GET_TAGS, SQL_GET_TAGS_ALL, SQL_GET_TAGS_ID
+
+mysql_conn = pymysql.connect(**MYSQL_INFO)
 
 
-def mysql_get_tags_id(args):
+def mysql_query_wherein(sql, args):
+    # 查询 格式where in
     try:
         cursor = mysql_conn.cursor()
-        sql = """SELECT tag_id FROM corpus_keyword a LEFT JOIN corpus_word2tag b ON a.id=b.word_id 
-                  WHERE a.word IN (%s);"""
         in_p = ', '.join(list(map(lambda x: "'%s'" % x, args)))
         sql = sql % in_p
-        tag_id_list = cursor.execute(sql, args)
+        print(sql)
+        cursor.execute(sql)
+        results = cursor.fetchall()
         cursor.close()
-        return tag_id_list
+        return results
     except Exception as e:
         print(e)
+        return []
 
 
-def mysql_get_tag(args):
+def mysql_query_all(sql):
+    # 查询全部数据
     try:
         cursor = mysql_conn.cursor()
-        sql = """select * from corpus_tag where id in (%s);"""
-        in_p = ', '.join(list(map(lambda x: "'%s'" % x, args)))
-        sql = sql % in_p
-        tag_list = cursor.execute(sql, args)
+        cursor.execute(sql)
+        results = cursor.fetchall()
         cursor.close()
-        return tag_list
+        return results
     except Exception as e:
         print(e)
 
 
 def mysql_insert(sql):
+    # 数据库写入
     cursor = mysql_conn.cursor()
     try:
         cursor.execute(sql)
@@ -52,3 +57,11 @@ def mysql_get_questions():
 def redis_get_frames():
     pass
 
+# ---------------------------test---------------------------
+# t = mysql_query_all(SQL_GET_TAGS_ALL)
+# print(t)
+t1 = mysql_query_wherein(SQL_GET_TAGS_ID, ["哈哈"])
+t2 = mysql_query_wherein(SQL_GET_TAGS, [2,3,5])
+# print(t1,len(t1))
+for x in t1:
+    print(x[0], type(x[0]))

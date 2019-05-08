@@ -1,4 +1,8 @@
+from collections import Counter
+
 from talk import Talk
+from database import mysql_query_wherein
+from setting import SQL_GET_TAGS, SQL_GET_TAGS_ID
 
 
 class Frame:
@@ -27,7 +31,7 @@ class Frame:
         self.create_time = create_time
         self.update_time = None
         self.redis_key = None
-        self.frame_tag = None
+        self.frame_tag = []
         self.frame_type = frame_type     # 类型 0-询问 1-指令
         self.frame_state_code = 0
         self.frame_wait_next_talk_state = False
@@ -37,13 +41,40 @@ class Frame:
         word = self.empty_repeat_words(talk_msg)
         if word != 0:
             return word
+        self.update_time = talk_time
 
-        pass
 
-    def get_tags(self, talk_msg):
+
+    def tags_process(self, talk_msg):
+        """
+
+        :param talk_msg:
+        :return: 返回字符串，对话内容
+        """
+        tag = self.frame_tag[0]
+        return ''
+
+    def _get_tags(self, talk_msg):
         t = Talk(self.user_id, talk_msg)
         key_words_list = t.get_keywords_list()
-        self.__query_db(key_words_list)
+        results_tags_id_tuple = mysql_query_wherein(SQL_GET_TAGS_ID, key_words_list)  # 从数据库 查找 关键词，获得 tags_id的列表
+
+        if len(results_tags_id_tuple) == 0:
+            return None
+
+        tags_id_list = []
+        for result in results_tags_id_tuple:
+            tags_id_list.append(result[0])
+
+        results_tags_tuple = mysql_query_wherein(SQL_GET_TAGS, tags_id_list)     # 根据tags_id的列表，获得tags
+
+        tags_weight_dict = self.__tags_weight(tags_id_list)
+
+        for k in tags_weight_dict.keys():
+            for result in results_tags_tuple:
+                if result[0] == k:
+                    self.frame_tag.append(result[1])
+
 
 
     def update_state_code(self):
@@ -99,12 +130,12 @@ class Frame:
 
         pass
 
-    def tags_weight(self):
+    def __tags_weight(self, weight_list):
         """
         分类 权重
-        :return:
+        :return: 权重字典
         """
-        pass
+        return Counter(weight_list)
 
     def questions_weight(self):
         """
