@@ -29,6 +29,30 @@ class Talk:
     def get_keywords_list(self):
         return self.keywords_list
 
+    def yes_or_no_words(self):
+        """
+        判断 句子中 对错的词
+        :return:
+        """
+        yes_words_number = 0
+        no_words_number = 0
+
+        for word in self.words_list:
+            if word in YES_WORDS_LIST and word in NO_WORDS_LIST:
+                continue
+            elif word in YES_WORDS_LIST:
+                yes_words_number += 1
+            elif word in NO_WORDS_LIST:
+                no_words_number += 1
+
+        iscode = 0  # 相等 或者 都为0 不确定 对 还是 错 返回0
+        if yes_words_number > no_words_number:
+            iscode = 1
+        elif yes_words_number < no_words_number:
+            iscode = 2
+
+        return iscode
+
     def __run(self):
         self.__talk_to_words()
         self.__stop_words()
@@ -47,6 +71,25 @@ class Talk:
         :return: 关键词列表
         """
         self.keywords_list = list(set([i for i in self.words_list if i not in STOP_WORDS_LIST or len(i) > 2]))
+
+    def sentiment_classify(self):
+        """
+        情感倾向分析
+        自动对包含主观信息的文本进行情感倾向性判断（积极、消极、中性），并给出相应的置信度。
+        为口碑分析、话题监控、舆情分析等应用提供基础技术支持，同时支持用户自行定制模型效果调优。
+        :return:
+        """
+        pass
+
+    def emotion(self):
+        """
+        对话情绪识别
+        针对用户日常沟通文本背后所蕴含情绪的一种直观检测，可自动识别出当前会话者所表现出的一级和二级细分情绪类别及其置信度，
+        针对正面和负面的情绪，还可给出参考回复话术。帮助企业更全面地把握产品服务质量、监控客户服务质量。
+        在自动监控中如果发现有负面情绪出现，可以及时介入人工处理，帮助在有限的人工客服条件下，降低客户流失。
+        :return:
+        """
+        pass
 
 
 class Questions:

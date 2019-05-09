@@ -2,8 +2,6 @@ import pymysql
 import redis
 from setting import MYSQL_INFO, REDIS_INFO
 
-# test
-from setting import SQL_GET_TAGS, SQL_GET_TAGS_ALL, SQL_GET_TAGS_ID
 
 mysql_conn = pymysql.connect(**MYSQL_INFO)
 
@@ -57,11 +55,3 @@ def mysql_get_questions():
 def redis_get_frames():
     pass
 
-# ---------------------------test---------------------------
-# t = mysql_query_all(SQL_GET_TAGS_ALL)
-# print(t)
-t1 = mysql_query_wherein(SQL_GET_TAGS_ID, ["哈哈"])
-t2 = mysql_query_wherein(SQL_GET_TAGS, [2,3,5])
-# print(t1,len(t1))
-for x in t1:
-    print(x[0], type(x[0]))

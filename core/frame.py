@@ -1,8 +1,8 @@
 from collections import Counter
 
 from talk import Talk
-from database import mysql_query_wherein
-from setting import SQL_GET_TAGS, SQL_GET_TAGS_ID
+from database import mysql_query_wherein, mysql_query_all
+from setting import SQL_GET_TAGS, SQL_GET_TAGS_ID, SQL_GET_TAGS_ALL
 
 
 class Frame:
@@ -24,6 +24,11 @@ class Frame:
         6 -> -1 列表中无合适的问题，结束，记录一次 无效解决
 
     """
+
+    process_dict = {
+        0: "tags_process",
+    }
+
     def __init__(self, user_id, create_time, frame_type=0):
         self.user_id = user_id
         self.talk_list = []
@@ -43,24 +48,32 @@ class Frame:
             return word
         self.update_time = talk_time
 
-
-
     def tags_process(self, talk_msg):
         """
-
+        获得分类名称流程
         :param talk_msg:
         :return: 返回字符串，对话内容
         """
-        tag = self.frame_tag[0]
-        return ''
+        response_word = ""
+        code = self._get_tags(talk_msg)
+        if code == 0:
+            pass
+        tags_name = self.frame_tag[0]
+
+        return response_word
 
     def _get_tags(self, talk_msg):
+        """
+        获得分类名称，并放入 self.frame_tag 列表里
+        :param talk_msg: 句子
+        :return:  执行状态码
+        """
         t = Talk(self.user_id, talk_msg)
         key_words_list = t.get_keywords_list()
         results_tags_id_tuple = mysql_query_wherein(SQL_GET_TAGS_ID, key_words_list)  # 从数据库 查找 关键词，获得 tags_id的列表
 
         if len(results_tags_id_tuple) == 0:
-            return None
+            return 0    # self.frame_tag 列表 没有数据
 
         tags_id_list = []
         for result in results_tags_id_tuple:
@@ -68,22 +81,24 @@ class Frame:
 
         results_tags_tuple = mysql_query_wherein(SQL_GET_TAGS, tags_id_list)     # 根据tags_id的列表，获得tags
 
-        tags_weight_dict = self.__tags_weight(tags_id_list)
+        tags_weight_dict = self.__tags_weight(tags_id_list)     # 计算权重
 
         for k in tags_weight_dict.keys():
             for result in results_tags_tuple:
                 if result[0] == k:
                     self.frame_tag.append(result[1])
+                    results_tags_tuple.remove(result)    # 找到了tags,就从results_tags_tuple中删除，提高效率，下次循环少一个
+                    break   # 找到就退出循环，进行下一个
 
+        return 1    # self.frame_tag 列表 有数据
 
-
-    def update_state_code(self):
+    def update_state_code(self, state_code):
         """
         更改 对话框架 状态码
         :return:
         """
-
-        pass
+        self.frame_state_code = state_code
+        self.error_number = 0
 
     def empty_repeat_words(self, talk_msg):
         """
@@ -133,6 +148,7 @@ class Frame:
     def __tags_weight(self, weight_list):
         """
         分类 权重
+        目前简单的算了一下，权重肯定不准确
         :return: 权重字典
         """
         return Counter(weight_list)
