@@ -34,6 +34,23 @@ def mysql_query_all(sql):
         print(e)
 
 
+def mysql_query_where_equal(sql, s):
+    """
+    查询符合条件的数据
+    :param sql:  查询语句
+    :param s: 数值
+    :return: 查询数据
+    """
+    try:
+        cursor = mysql_conn.cursor()
+        cursor.execute(sql, s)
+        results = cursor.fetchall()
+        cursor.close()
+        return results
+    except Exception as e:
+        print(e)
+
+
 def mysql_insert(sql):
     # 数据库写入
     cursor = mysql_conn.cursor()
@@ -45,11 +62,6 @@ def mysql_insert(sql):
         print(e)
         cursor.close()
         mysql_conn.rollback()
-
-
-
-def mysql_get_questions():
-    pass
 
 
 def redis_get_frames():

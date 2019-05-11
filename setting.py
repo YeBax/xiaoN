@@ -1,6 +1,8 @@
 import os
 import sys
 
+__author__ = "Yebax"
+
 # 项目内部构建路径
 # 例如这样格式: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -33,5 +35,5 @@ REDIS_INFO = {
 SQL_GET_TAGS_ID = """SELECT tag_id FROM corpus_keyword a LEFT JOIN corpus_word2tag b ON a.id=b.word_id WHERE a.word IN (%s);"""
 SQL_GET_TAGS = """SELECT * FROM corpus_tag WHERE id IN (%s);"""
 SQL_GET_TAGS_ALL = """SELECT tag FROM corpus_tag;"""
-SQL_GET_QUESTIONS_FOR_TAGS = """SELECT * FROM corpus_tag2question WHERE tag_id = %s"""
-
+SQL_GET_QUESTIONS_FOR_TAGS_ID = """SELECT q.id, q.question FROM (SELECT * FROM corpus_tag2question WHERE tag_id = %s) t LEFT JOIN corpus_queandans q ON t.question_id = q.id;"""
+SQL_GET_ANSWER = """SELECT answer FROM corpus_queandans  WHERE id = %s;"""

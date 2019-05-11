@@ -93,19 +93,23 @@ class Talk:
 
 
 class Questions:
-    def __init__(self, questions_list):
-        self.questions_list = questions_list
-        self.questions_dict = {}
+    def __init__(self, questions_id, question_name):
+        self.question_id = questions_id
+        self.question_name = question_name
+        self.keywords_list = []
 
-    def get_questions_dict(self):
-        for talks in self.questions_list:
-            words_list = jieba.cut(talks.strip(), cut_all=True, HMM=True)
-            keywords_list = list(set([i for i in words_list if i not in STOP_WORDS_LIST or len(i) > 2]))
-            if talks in self.questions_dict:
-                continue
-            self.questions_dict[talks] = keywords_list
+    def _run(self):
+        words_list = jieba.cut(self.question_name, cut_all=True, HMM=True)
+        self.keywords_list = list(set([i for i in words_list if i not in STOP_WORDS_LIST or len(i) > 2]))
 
-        return self.questions_dict
+    def get_keywords_list(self):
+        return self.keywords_list
+
+    def get_question_id(self):
+        return self.question_id
+
+    def get_question_name(self):
+        return self.question_name
 
 
 class Tags:
