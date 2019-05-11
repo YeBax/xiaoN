@@ -24,10 +24,36 @@ tags_list = []
 # results = mysql_query_where_equal(SQL_GET_ANSWER, 1)[0]
 # print(results[0])
 
-l1 = ["a", "b", "c", "d"]
-l2 = ["c", "e", "a"]
+l1 = ["a", "b", "c", "d",'e','k']
+l2 = ["c", "b", "a", "e", 'k','d']
 s1 = set(l1)
 s2 = set(l2)
+s3 = s1.intersection(s2)
 # c1 = len(s1.union(s2))
 # c2 = len(s1.intersection(s2))
+# s3_count = len(s3)
+s3_count = 3
+w = 1 / s3_count ** 2
+p1 = []
+p2 = []
+print(w)
+for word in s3:
+    p1.append(l1.index(word))
+    p2.append(l2.index(word))
+print(p1)
+print(p2)
 
+for i in range(s3_count-1):
+    for j in range(i+1, s3_count):
+        p1_code = 0
+        p2_code = 0
+        if p1[i] < p1[j]: p1_code = 1
+        if p2[i] < p2[j]: p2_code = 1
+        if not p1_code == p2_code:
+            print(i,j)
+            print("p1[i]",p1[i],"p1[j]",p1[j])
+            print("p2[i]",p2[i],"p2[j]", p2[j])
+            w /= 1 - 1 / s3_count
+    print(i)
+    w /= 1 / s3_count
+print(w)

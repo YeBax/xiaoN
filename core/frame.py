@@ -266,19 +266,20 @@ class Frame:
 
             list_probability = 1 / intersection_count ** 2
 
-            # for word in talk_keywords_list:
-            #     for x in talk_keywords_set.union(question_keywords_set):
-            #         if
-
             p1 = []
             p2 = []
             for word in talk_keywords_set.intersection(question_keywords_set):
-                p1.append(talk_keywords_list.insert(word))
-                p2.append(question_keywords_list.insert(word))
-            
+                p1.append(talk_keywords_list.index(word))
+                p2.append(question_keywords_list.index(word))
 
+            for i in range(intersection_count):
+                for j in range(i+1, intersection_count):
+                    if p1[i] < p1[j] == p2[i] < p2[i]:
+                        list_probability /= 1 - 1 / intersection_count
+                list_probability /= 1 / intersection_count
+
+            weight *= list_probability
             questions_weight_dict[question] = weight
-
         return questions_weight_dict
 
     def __collect_questions(self, question):
