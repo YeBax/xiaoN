@@ -10,11 +10,11 @@ class Talk:
         talk类只处理句子
         与上下文无关，对话逻辑在frame类中体现
         """
-        self.user_id = user_id
-        self.msg_id = None
-        self.talk_msg = talk_msg
-        self.words_list = []
-        self.keywords_list = []
+        self.user_id = user_id  # 用户ID
+        self.msg_id = None  # 消息ID
+        self.talk_msg = talk_msg    # 消息内容，对话句子
+        self.words_list = []    # 分词列表
+        self.keywords_list = []     # 分词过滤后的，关键词列表
 
         self.__run()
 
@@ -47,9 +47,9 @@ class Talk:
 
         iscode = 0  # 相等 或者 都为0 不确定 对 还是 错 返回0
         if yes_words_number > no_words_number:
-            iscode = 1
+            iscode = 1  # 1 是
         elif yes_words_number < no_words_number:
-            iscode = 2
+            iscode = 2  # 2 不是
 
         return iscode
 
@@ -107,6 +107,21 @@ class Questions:
 
         return self.questions_dict
 
+
+class Tags:
+    def __init__(self, tag_id, tag_name, tag_belong_id):
+        self.tag_id = tag_id    # 标签ID
+        self.tag_name = tag_name    # 标签名称
+        self.tag_belong_id = tag_belong_id      # 上级标签名称
+
+    def get_tag_id(self):
+        return self.tag_id
+
+    def get_tag_name(self):
+        return self.tag_name
+
+    def get_tag_belong_id(self):
+        return self.tag_belong_id
 
 
 

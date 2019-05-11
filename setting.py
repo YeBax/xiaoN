@@ -33,4 +33,5 @@ REDIS_INFO = {
 SQL_GET_TAGS_ID = """SELECT tag_id FROM corpus_keyword a LEFT JOIN corpus_word2tag b ON a.id=b.word_id WHERE a.word IN (%s);"""
 SQL_GET_TAGS = """SELECT * FROM corpus_tag WHERE id IN (%s);"""
 SQL_GET_TAGS_ALL = """SELECT tag FROM corpus_tag;"""
+SQL_GET_QUESTIONS_FOR_TAGS = """SELECT * FROM corpus_tag2question WHERE tag_id = %s"""
 
