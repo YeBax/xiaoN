@@ -38,9 +38,7 @@ class Talk:
         no_words_number = 0
 
         for word in self.words_list:
-            if word in YES_WORDS_LIST and word in NO_WORDS_LIST:
-                continue
-            elif word in YES_WORDS_LIST:
+            if word in YES_WORDS_LIST:
                 yes_words_number += 1
             elif word in NO_WORDS_LIST:
                 no_words_number += 1
@@ -63,6 +61,7 @@ class Talk:
         :return:
         """
         self.words_list = jieba.cut(self.talk_msg.strip(), cut_all=True, HMM=True)
+        self.words_list = list(self.words_list)
 
     def __stop_words(self):
         """
@@ -97,6 +96,8 @@ class Questions:
         self.question_id = questions_id
         self.question_name = question_name
         self.keywords_list = []
+
+        self._run()
 
     def _run(self):
         words_list = jieba.cut(self.question_name, cut_all=True, HMM=True)

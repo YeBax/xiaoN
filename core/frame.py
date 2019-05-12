@@ -27,10 +27,6 @@ class Frame:
 
     """
 
-    process_dict = {
-        0: "tags_process",
-    }
-
     def __init__(self, user_id, create_time, frame_type=0):
         self.user_id = str(user_id)
         self.talk_list = []
@@ -53,8 +49,16 @@ class Frame:
         if word != 0:
             return word
         self.update_time = talk_time
-        # self.__add_talks(talk_msg.strip())
-        return "小N 为你服务！"
+
+        process_dict = {
+            0: self._tags_process,
+            1: self._check_tags_process
+        }
+
+        word = process_dict[self.frame_state_code](talk_msg)
+
+        self.__add_talks(talk_msg.strip())
+        return word
 
     def get_redis_key(self):
         return self.redis_key
@@ -75,14 +79,14 @@ class Frame:
             results_tags_all_tuple = mysql_query_all(SQL_GET_TAGS_ALL)
             for result in results_tags_all_tuple:
                 tags_list.append(result[1])
-            in_p = ', '.join(list(map(lambda x: "'%s'" % x, tags_list)))
-            response_word += "非常想解决你的问题，但还是不清楚你问哪个方面？\n请在以下选项中，选择一个分类吧：\n %s\n" % in_p
+            in_p = '\n'.join(list(map(lambda x: "'%s'" % x, tags_list)))
+            response_word += "非常想解决你的问题，但还是不清楚你问哪个方面？\n请在以下选项中，选择一个分类吧：\n%s" % in_p
         else:
             tags_name = self.frame_tags_list[0].get_tag_name()
             response_word += "好像找到了，你的问题是关于【%s】方面的吗？\n" % tags_name
             if len(self.frame_tags_list[1:]) > 0:
-                in_p = ', '.join(list(map(lambda x: "'%s'" % x.get_tag_name(), self.frame_tags_list[1:])))
-                response_word += '要是我理解错了，那就从下面的选项中，选择一个分类吧！\n %s\n' % in_p
+                in_p = ','.join(list(map(lambda x: "'%s'" % x.get_tag_name(), self.frame_tags_list[1:])))
+                response_word += '要是我理解错了，那就从下面的选项中，选择一个分类吧！\n%s' % in_p
 
         self.__update_state_code(1)   # 状态设为 1  已经问过问题，进入等待回话分类的准确性的状态
         return response_word
@@ -104,12 +108,14 @@ class Frame:
                 if tag_name == talk_msg and tag_name in keywords_list:
                     tag = Tags(result[0], result[1], result[2])
                     self.frame_tags_list.append(tag)
-                    response_word += self._response_answer_process(tag, talk)
+                    response_word += self._response_answer_process(tag, self.talk_list[-1])
                     break
         else:
             if iscode == 1:
-                response_word += self._response_answer_process(self.frame_tags_list[0], talk)
+                self.__update_state_code(2)
+                response_word += self._response_answer_process(self.frame_tags_list[0], self.talk_list[-1])
             elif iscode == 2:
+                self.__update_state_code(3)
                 in_p = ', '.join(list(map(lambda x: "'%s'" % x.get_tag_name(), self.frame_tags_list[1:])))
                 response_word += "这个分类不对嘛？\n从下面选择一个你认为的分类吧！\n %s\n" % in_p
             elif iscode == 0:
@@ -120,17 +126,18 @@ class Frame:
                     if tag_name == talk_msg and tag_name in keywords_list:
                         self.frame_tags_list.remove(tag)    # 删除tag 对象
                         self.frame_tags_list.insert(0, tag)     # 将tag插入列表首位，保证self.frame_tags_list[0]为目标分类
-                        response_word += self._response_answer_process(tag, talk)
+                        response_word += self._response_answer_process(tag, self.talk_list[-1])
                         break
 
-        if response_word == "小N，":
+        if response_word == "~小N~，":
             response_word += "不知道你在说什么，换个方式回答吧！"
 
         return response_word
 
-    def _response_answer_process(self, tag, talk):
+    def _response_answer_process(self, tag, talk_msg):
+        talk = Talk(self.user_id, talk_msg)
         results_questions_tuple = mysql_query_where_equal(SQL_GET_QUESTIONS_FOR_TAGS_ID, tag.get_tag_id())  # 查询符合的问题
-        if results_questions_tuple.count() == 0:
+        if len(results_questions_tuple) == 0:
             return self.__collect_questions(talk)
 
         questions_list = []
@@ -142,12 +149,18 @@ class Frame:
             return self.__collect_questions(talk)
 
         self.questions_weight_dict = self.__questions_weight(questions_list, talk)  # 获取问题权重
-        response_question = max(self.questions_weight_dict, key=self.questions_weight_dict.get)     # 获取最大值
-        response_answer = self.__get_answer(response_question)
-        response_words = "太棒了~已经找到了你可能要想要的结果！\n 相似问题：【%s】\n 答案结果：%s" \
-                         % (response_question.get_question_name(), response_answer)
-        return response_words
+        question_name = max(self.questions_weight_dict, key=self.questions_weight_dict.get)     # 获取最大值
 
+        if self.questions_weight_dict[question_name] == 0:
+            return self.__collect_questions(talk)
+
+        for question in questions_list:
+            if question.get_question_name() == question_name:
+                response_question = question
+                response_answer = self.__get_answer(response_question)
+                response_words = "太棒了~已经找到了你可能要想要的结果！\n 问题：【%s】\n 结果：%s"\
+                                 % (response_question.get_question_name(), response_answer)
+                return response_words
 
     # ====================================================================================================
     # 私有基础函数方法
@@ -162,7 +175,7 @@ class Frame:
         key_words_list = t.get_keywords_list()
         results_tags_id_tuple = mysql_query_wherein(SQL_GET_TAGS_ID, key_words_list)  # 从数据库 查找 关键词，获得 tags_id的列表
 
-        if len(results_tags_id_tuple) == 0:
+        if not results_tags_id_tuple:
             return 0    # self.frame_tag 列表 没有数据
 
         tags_id_list = []
@@ -174,6 +187,7 @@ class Frame:
         self.tags_weight_dict = self.__tags_weight(tags_id_list)     # 计算标签权重
 
         for k in self.tags_weight_dict.keys():
+            results_tags_tuple = list(results_tags_tuple)
             for result in results_tags_tuple:
                 if result[0] == k:
                     tag = Tags(result[0], result[1], result[2])
@@ -203,9 +217,10 @@ class Frame:
         if talk_msg in self.talk_list:
             self.error_number += 1
             return "呀，你刚刚上句就这样说的，同学，你失忆了吗？"
-        if self.talk_list and talk_msg.strip() is self.talk_list[-1].key():
-            self.error_number += 1
-            return "啊？你是不是发重复了？"
+        if self.talk_list:
+            if talk_msg.strip() == self.talk_list[-1]:
+                self.error_number += 1
+                return "啊？你是不是发重复了？"
         return 0
 
     def __wait_timeout(self):
@@ -219,14 +234,14 @@ class Frame:
         results = mysql_query_where_equal(SQL_GET_ANSWER, question.get_question_id())[0]
         return results[0]
 
-    def __add_talks(self, question, answer):
+    def __add_talks(self, question):
         """
         添加一次对话内容
         :param question: 用户的问题
         :param answer: 机器人小N的回答
         :return:
         """
-        self.talk_list.append({question: answer})
+        self.talk_list.append(question)
 
     def __tags_weight(self, weight_list):
         """
@@ -255,31 +270,31 @@ class Frame:
             difference_count = len(talk_keywords_set.difference(question_keywords_set))    # 差集词频
 
             if intersection_count == 0:     # 没有关键词
-                questions_weight_dict[question] = weight
-                break
+                questions_weight_dict[question.get_question_name()] = weight
+                continue
 
             if intersection_count / union_count == 1:   # 全部关键词相同
                 weight = 1
+            else:
+                weight = intersection_count / union_count * \
+                         min(intersection_count, difference_count) / max(intersection_count, difference_count)
 
-            weight = intersection_count / union_count * \
-                     min(intersection_count, difference_count) / max(intersection_count, difference_count)
-
-            list_probability = 1 / intersection_count ** 2
-
-            p1 = []
-            p2 = []
-            for word in talk_keywords_set.intersection(question_keywords_set):
-                p1.append(talk_keywords_list.index(word))
-                p2.append(question_keywords_list.index(word))
-
-            for i in range(intersection_count):
-                for j in range(i+1, intersection_count):
-                    if p1[i] < p1[j] == p2[i] < p2[i]:
-                        list_probability /= 1 - 1 / intersection_count
-                list_probability /= 1 / intersection_count
-
-            weight *= list_probability
-            questions_weight_dict[question] = weight
+            # list_probability = 1 / intersection_count ** 2
+            #
+            # p1 = []
+            # p2 = []
+            # for word in talk_keywords_set.intersection(question_keywords_set):
+            #     p1.append(talk_keywords_list.index(word))
+            #     p2.append(question_keywords_list.index(word))
+            #
+            # for i in range(intersection_count):
+            #     for j in range(i+1, intersection_count):
+            #         if p1[i] < p1[j] == p2[i] < p2[i]:
+            #             list_probability /= 1 - 1 / intersection_count
+            #     list_probability /= 1 / intersection_count
+            #
+            # weight *= list_probability
+            questions_weight_dict[question.get_question_name()] = weight
         return questions_weight_dict
 
     def __collect_questions(self, question):
