@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import uuid
 import time
 from collections import Counter
@@ -6,41 +7,64 @@ from talk import Talk, Tags, Questions
 from database import mysql_query_wherein, mysql_query_all, mysql_query_where_equal, mysql_insert
 from setting import SQL_GET_TAGS, SQL_GET_TAGS_ID, SQL_GET_TAGS_ALL, SQL_GET_QUESTIONS_FOR_TAGS_ID, SQL_GET_ANSWER
 
+__author__ = "Yebax"
+
 
 class Frame:
     """
     对话框架类
 
     框架状态码  self.frame_state_code
-        0 -> 1  初次询问 问题
-        1 -> 2  检索分类，等待答复
-        2 -> 3  肯定答复，匹配标准问题
-        2 -> 4  否定答复，重新寻找分类
-        4 -> 2  检索分类，等待答复
-        2 -> -1 放弃询问，结束
-        3 -> 5  返回标准问题，和答案
-        5 -> -1 肯定答案，结束，记录一次 有效解决
-        5 -> 6  否定答案，返回一次相似问题列表
-        6 -> 7  选中列表中的问题，返回答案
-        7 -> -1 肯定答案，结束，记录一次 有效解决
-        6 -> -1 列表中无合适的问题，结束，记录一次 无效解决
+        0   创建对话框架
+        ----------------------------------------------
+        1   问题
+        2   指令
+        -1  超时关闭对话，超过300秒，无再次接收消息
+        ----------------------------------------------
+        问题
+        10   等待接收问题
+            101  已经接收问题     ->  11
+            102  未接收到问题，超过60秒，提示  ->  -1
+        11  问题匹配分类
+            111  开始匹配分类   ->  12
+            112  未找出分类  ->  113
+            113  询问问题分类，等待反馈
+                1131    反馈一个分类   ->  12
+                1132    未找出一个分类 ->  10
+        12   开始匹配答案
+            121  匹配到答案  ->  13
+            122  未匹配到答案 ->  113 询问问题分类
+
+        13   已经反馈答案 -> 10
+
+        ----------------------------------------------
+
+
 
     """
 
-    def __init__(self, user_id, create_time, frame_type=0):
+    def process_dict(self, code):
+        p_d = {
+            0: self._tags_process,
+            1: self._check_tags_process
+
+        }
+        return p_d.get(code)
+
+    def __init__(self, user_id, create_time):
         self.user_id = str(user_id)
         self.talk_list = []
-        self.response_words_list = []
         self.create_time = create_time
         self.update_time = None
         self.redis_key = None
         self.frame_tags_list = []
-        self.frame_type = frame_type     # 类型 0-询问 1-指令
+        self.frame_type = 1     # 类型 1-询问 2-指令
         self.frame_state_code = 0
         self.frame_wait_next_talk_state = False
         self.error_number = 0
         self.tags_weight_dict = {}  # 标签权重字典
         self.questions_weight_dict = {}     # 匹配问题权重字典
+        self.questions_words_last = None
 
         self.__set_redis_key()
 
@@ -50,12 +74,7 @@ class Frame:
             return word
         self.update_time = talk_time
 
-        process_dict = {
-            0: self._tags_process,
-            1: self._check_tags_process
-        }
-
-        word = process_dict[self.frame_state_code](talk_msg)
+        word = self.process_dict(self.frame_state_code)(talk_msg)
 
         self.__add_talks(talk_msg.strip())
         return word
@@ -151,7 +170,7 @@ class Frame:
         self.questions_weight_dict = self.__questions_weight(questions_list, talk)  # 获取问题权重
         question_name = max(self.questions_weight_dict, key=self.questions_weight_dict.get)     # 获取最大值
 
-        if self.questions_weight_dict[question_name] == 0:
+        if not self.questions_weight_dict:
             return self.__collect_questions(talk)
 
         for question in questions_list:
@@ -173,6 +192,9 @@ class Frame:
         """
         t = Talk(self.user_id, talk_msg)
         key_words_list = t.get_keywords_list()
+
+        if not key_words_list:
+            print("说的什么啊？")
         results_tags_id_tuple = mysql_query_wherein(SQL_GET_TAGS_ID, key_words_list)  # 从数据库 查找 关键词，获得 tags_id的列表
 
         if not results_tags_id_tuple:
@@ -213,7 +235,7 @@ class Frame:
         """
         if talk_msg.strip() == "":
             self.error_number += 1
-            return '你好像什么都没输入，小N不知道你在问什么？'
+            return '嗨？你好像什么都没输入，小N不知道你在问什么？'
         if talk_msg in self.talk_list:
             self.error_number += 1
             return "呀，你刚刚上句就这样说的，同学，你失忆了吗？"
@@ -259,41 +281,32 @@ class Frame:
         questions_weight_dict = {}
         talk_keywords_list = talk.get_keywords_list()
         talk_keywords_set = set(talk_keywords_list)
-        talk_keywords_count = len(talk_keywords_set)
         for question in questions_list:
-            weight = 0
             question_keywords_list = question.get_keywords_list()
             question_keywords_set = set(question_keywords_list)
-            questions_keywords_count = len(question_keywords_set)  # 问题关键词数量
+            intersection_words_list = talk_keywords_set.intersection(question_keywords_set)     # 交集词表
+            intersection_count = len(intersection_words_list)  # 交集词频
             union_count = len(talk_keywords_set.union(question_keywords_set))   # 并集词频
-            intersection_count = len(talk_keywords_set.intersection(question_keywords_set))     # 交集词频
-            difference_count = len(talk_keywords_set.difference(question_keywords_set))    # 差集词频
+            # difference_count = len(talk_keywords_set.difference(question_keywords_set))    # 差集词频
 
             if intersection_count == 0:     # 没有关键词
-                questions_weight_dict[question.get_question_name()] = weight
                 continue
 
-            if intersection_count / union_count == 1:   # 全部关键词相同
-                weight = 1
-            else:
-                weight = intersection_count / union_count * \
-                         min(intersection_count, difference_count) / max(intersection_count, difference_count)
+            weight = intersection_count / union_count
+            intersection_probability = 1
 
-            # list_probability = 1 / intersection_count ** 2
-            #
-            # p1 = []
-            # p2 = []
-            # for word in talk_keywords_set.intersection(question_keywords_set):
-            #     p1.append(talk_keywords_list.index(word))
-            #     p2.append(question_keywords_list.index(word))
-            #
-            # for i in range(intersection_count):
-            #     for j in range(i+1, intersection_count):
-            #         if p1[i] < p1[j] == p2[i] < p2[i]:
-            #             list_probability /= 1 - 1 / intersection_count
-            #     list_probability /= 1 / intersection_count
-            #
-            # weight *= list_probability
+            p1 = []
+            p2 = []
+            for word in intersection_words_list:
+                p1.append(talk_keywords_list.index(word))
+                p2.append(question_keywords_list.index(word))
+
+            for i in range(intersection_count):
+                for j in range(intersection_count):
+                    if str(p1[i] < p1[j]) != str(p2[i] < p2[i]):
+                        intersection_probability *= 1 / intersection_count
+
+            weight = weight * 2 / 3 + intersection_probability * 1 / 3
             questions_weight_dict[question.get_question_name()] = weight
         return questions_weight_dict
 
@@ -312,6 +325,7 @@ class Frame:
         :return:
         """
         self.redis_key = uuid.uuid3(uuid.NAMESPACE_DNS, str(self.user_id+self.create_time))
+
 
 
 

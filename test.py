@@ -5,7 +5,7 @@ __author__ = "Yebax"
 from setting import SQL_GET_TAGS_ALL, SQL_GET_TAGS_ID, SQL_GET_TAGS, SQL_GET_ANSWER
 from talk import Tags, Talk
 from database import mysql_query_all, mysql_query_wherein, mysql_query_where_equal
-
+import math
 
 tags_list = []
 
@@ -24,46 +24,45 @@ tags_list = []
 # results = mysql_query_where_equal(SQL_GET_ANSWER, 1)[0]
 # print(results[0])
 
-# l1 = ["a", "b", "c", "d", 'e']
-# l2 = ["a", "b", "c", "d", 'e']
-# s1 = set(l1)
-# s2 = set(l2)
-# s3 = s1.intersection(s2)
-# # c1 = len(s1.union(s2))
-# # c2 = len(s1.intersection(s2))
-# s3_count = len(s3)
-# print(s3_count)
-# s3_count = int(s3_count * (s3_count - 1) / 2)
-# print(s3_count)
-# w = 1 / s3_count ** 2
-# p1 = []
-# p2 = []
-# print("w", w)
-# for word in s3:
-#     p1.append(l1.index(word))
-#     p2.append(l2.index(word))
-# print(p1)
-# print(p2)
-#
-# for i in range(s3_count-1):
-#     for j in range(i+1, s3_count):
-#         p1_code = 0
-#         p2_code = 0
-#         if p1[i] < p1[j]: p1_code = 1
-#         if p2[i] < p2[j]: p2_code = 1
-#         if not p1_code == p2_code:
-#             print(i,j)
-#             print("p1[i]",p1[i],"p1[j]",p1[j])
-#             print("p2[i]",p2[i],"p2[j]", p2[j])
-#             w *= 1 - 1 / s3_count
-#     print(i)
-#     w /= 1 / s3_count
-# print(w)
+l1 = ["a", "b", "c", "d", "e"]
+l2 = ["a", "c", "b", "e"]
+s1 = set(l1)
+s2 = set(l2)
+s3 = s1.intersection(s2)
+# c1 = len(s1.union(s2))
+# c2 = len(s1.intersection(s2))
+s3_count = len(s3)
+print(s3_count)
+
+w = 1
+
+p1 = []
+p2 = []
+for word in s3:
+    p1.append(l1.index(word))
+    p2.append(l2.index(word))
+print(p1)
+print(p2)
+
+num = 0
+int_x = math.ceil(math.sqrt(s3_count))
+for i in range(s3_count):
+    for j in range(s3_count):
+        num += 1
+        f1 = p1[i] < p1[j]
+        f2 = p2[i] < p2[j]
+        print(f1, f2)
+        if str(f1) != str(f2):
+            w *= 1 / s3_count
+
+print(w)
+print(num)
 
 
 
 
-import jieba
-talk_msg = "是吗"
-words_list = jieba.cut(talk_msg.strip(), cut_all=True, HMM=True)
-print(list(words_list))
+
+# import jieba
+# talk_msg = "是吗"
+# words_list = jieba.cut(talk_msg.strip(), cut_all=True, HMM=True)
+# print(list(words_list))

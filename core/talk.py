@@ -1,6 +1,9 @@
+# -*- coding: utf-8 -*-
 import jieba
 import uuid
 from words import STOP_WORDS_LIST, YES_WORDS_LIST, NO_WORDS_LIST
+
+__author__ = "Yebax"
 
 
 class Talk:
@@ -62,6 +65,7 @@ class Talk:
         """
         self.words_list = jieba.cut(self.talk_msg.strip(), cut_all=True, HMM=True)
         self.words_list = list(self.words_list)
+        print("分词结果：", self.words_list)
 
     def __stop_words(self):
         """
@@ -70,6 +74,7 @@ class Talk:
         :return: 关键词列表
         """
         self.keywords_list = list(set([i for i in self.words_list if i not in STOP_WORDS_LIST or len(i) > 2]))
+        print("关键词：", self.keywords_list)
 
     def sentiment_classify(self):
         """

@@ -1,9 +1,12 @@
+# -*- coding: utf-8 -*-
 import pymysql
 import redis
 from setting import MYSQL_INFO, REDIS_INFO
 
 
 mysql_conn = pymysql.connect(**MYSQL_INFO)
+
+__author__ = "Yebax"
 
 
 def mysql_query_wherein(sql, args):
