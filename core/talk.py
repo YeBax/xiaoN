@@ -7,27 +7,18 @@ __author__ = "Yebax"
 
 
 class Talk:
-    def __init__(self, user_id, talk_msg):
+    def __init__(self, talk_msg):
         """
         独立对话 初始化，
         talk类只处理句子
         与上下文无关，对话逻辑在frame类中体现
         """
-        self.user_id = user_id  # 用户ID
         self.msg_id = None  # 消息ID
         self.talk_msg = talk_msg    # 消息内容，对话句子
         self.words_list = []    # 分词列表
         self.keywords_list = []     # 分词过滤后的，关键词列表
 
         self.__run()
-
-    def get_msg_id(self):
-        """
-        根据 用户ID 使用UUID3 生成 消息ID
-        :return: msg_id (消息ID)
-        """
-        self.msg_id = uuid.uuid3(uuid.NAMESPACE_URL, self.user_id)
-        return self.msg_id
 
     def get_keywords_list(self):
         return self.keywords_list
