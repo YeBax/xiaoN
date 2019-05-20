@@ -171,6 +171,7 @@ class Frame:
         :return:
         """
         talk = Talk(self.questions_words_last)
+        self.frame_wait_next_talk_state = True
         results_questions_tuple = mysql_query_where_equal(SQL_GET_QUESTIONS_FOR_TAGS_ID, self.frame_tag.get_tag_id())  # 查询符合的问题
         if len(results_questions_tuple) == 0:
             return self.__collect_questions(talk)
@@ -184,17 +185,16 @@ class Frame:
             return self.__collect_questions(talk)
 
         self.questions_weight_dict = self.__questions_weight(questions_list, talk)  # 获取问题权重
-        question_name = max(self.questions_weight_dict, key=self.questions_weight_dict.get)     # 获取最大值
-
         if not self.questions_weight_dict:
             return self.__collect_questions(talk)
 
+        question_name = max(self.questions_weight_dict, key=self.questions_weight_dict.get)  # 获取最大值
         for question in questions_list:
             if question.get_question_name() == question_name:
                 response_question = question
                 response_answer = self.__get_answer(response_question)
-                response_words = "太棒了~已经找到了你可能要想要的结果！\n 问题：【%s】\n 结果：%s"\
-                                 % (response_question.get_question_name(), response_answer)
+                response_words = "太棒了~已经找到了你可能要想要的结果！\n 匹配的问题：【{0}】\n 回答：{1}"\
+                    .format(response_question.get_question_name(), response_answer)
                 self.__update_state_code(10)    # 重新进入等待问题
                 return response_words
 
