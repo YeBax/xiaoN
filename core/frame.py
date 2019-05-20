@@ -255,7 +255,7 @@ class Frame:
         self.frame_state_code = state_code
         self.error_number = 0   # 清除 错误积累次数
 
-    def __wait_timeout(self):
+    def set_wait_timeout(self):
         """
         等待超时 做出处理，状态改为 -1 结束
         :return:
