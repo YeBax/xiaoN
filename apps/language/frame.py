@@ -3,9 +3,9 @@ import uuid
 import time
 from collections import Counter
 
-from talk import Talk, Tags, Questions
-from database import mysql_query_wherein, mysql_query_where_equal, mysql_insert
-from setting import SQL_GET_TAGS, SQL_GET_TAGS_ID, SQL_GET_QUESTIONS_FOR_TAGS_ID, SQL_GET_ANSWER, SQL_ADD_QUESTIONS
+from .talk import Talk, Tags, Questions
+from tools.database import mysql_query_wherein, mysql_query_where_equal, mysql_insert
+from setting import SQL_GET_TAGS, SQL_GET_TAGS_ID, SQL_GET_QUESTIONS_FOR_TAGS_ID, SQL_GET_ANSWER, SQL_ADD_QUESTIONS, SQL_QUERY_QUESTIONS
 
 __author__ = "Yebax"
 
@@ -110,7 +110,7 @@ class Frame:
         if not code:
             self.frame_wait_next_talk_state = True
             self.__update_state_code(10)    # 重新进入等待问题状态
-            return "哎呀，小N同学，没有理解你在问什么，抱歉了！换一种问法试试吧。"
+            return self.__collect_questions(talk_msg)
 
         self.questions_words_last = talk_msg    # 获得有效问题
         tags_id_list = list(self.tags_weight_dict.keys())
@@ -174,7 +174,7 @@ class Frame:
         self.frame_wait_next_talk_state = True
         results_questions_tuple = mysql_query_where_equal(SQL_GET_QUESTIONS_FOR_TAGS_ID, self.frame_tag.get_tag_id())  # 查询符合的问题
         if len(results_questions_tuple) == 0:
-            return self.__collect_questions(talk)
+            return self.__collect_questions(self.questions_words_last)
 
         questions_list = []
         for result in results_questions_tuple:
@@ -182,11 +182,11 @@ class Frame:
             if q.get_keywords_list():   # 问题的关键词列表不为空时 有效，防止垃圾数据的影响
                 questions_list.append(q)
         if not questions_list:  # 防止 问题列表 为空
-            return self.__collect_questions(talk)
+            return self.__collect_questions(self.questions_words_last)
 
         self.questions_weight_dict = self.__questions_weight(questions_list, talk)  # 获取问题权重
         if not self.questions_weight_dict:
-            return self.__collect_questions(talk)
+            return self.__collect_questions(self.questions_words_last)
 
         question_name = max(self.questions_weight_dict, key=self.questions_weight_dict.get)  # 获取最大值
         for question in questions_list:
@@ -321,9 +321,10 @@ class Frame:
         将问题 写入数据库
         更改frame的状态
         """
-        mysql_insert(SQL_ADD_QUESTIONS)     # 收集 未解决的问题
+        if not mysql_query_where_equal(SQL_QUERY_QUESTIONS, question):
+            mysql_insert(SQL_ADD_QUESTIONS, question)     # 收集 未解决的问题
         self.__update_state_code(10)
-        return '未能帮你解决问题，但已经记录下来了。~小N~知道了答案，就会立即就反馈给你哦！或者，换一种问法试试呢！'
+        return "哎呀~小N~，没有理解你在问什么？但已经记下了咯，知道了就会立即反馈给你哦！现在换一种问法再试试吧！"
 
     def __set_redis_key(self):
         """

@@ -54,11 +54,11 @@ def mysql_query_where_equal(sql, s):
         print(e)
 
 
-def mysql_insert(sql):
+def mysql_insert(sql, s):
     # 数据库写入
     cursor = mysql_conn.cursor()
     try:
-        cursor.execute(sql)
+        cursor.execute(sql, s)
         cursor.close()
         mysql_conn.commit()
     except Exception as e:

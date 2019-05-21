@@ -1,5 +1,5 @@
 import datetime
-from core.frame import Frame
+from language.frame import Frame
 
 __author__ = "Yebax"
 

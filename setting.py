@@ -7,7 +7,7 @@ __author__ = "Yebax"
 # 例如这样格式: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE_DIR)
-sys.path.insert(0, os.path.join(BASE_DIR, 'core'))
+sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))
 sys.path.insert(0, os.path.join(BASE_DIR, 'extra_apps'))
 
 # ----------------------------------------------------------------------
@@ -37,4 +37,5 @@ SQL_GET_TAGS = """SELECT * FROM corpus_tag WHERE id IN (%s);"""
 SQL_GET_TAGS_ALL = """SELECT * FROM corpus_tag;"""
 SQL_GET_QUESTIONS_FOR_TAGS_ID = """SELECT q.id, q.question FROM (SELECT * FROM corpus_tag2question WHERE tag_id = %s) t LEFT JOIN corpus_queandans q ON t.question_id = q.id;"""
 SQL_GET_ANSWER = """SELECT answer FROM corpus_queandans  WHERE id = %s;"""
-SQL_ADD_QUESTIONS = """ """
+SQL_ADD_QUESTIONS = """INSERT INTO corpus_collection(questions,create_time,state) VALUES(%s,NOW(),0);"""
+SQL_QUERY_QUESTIONS = """SELECT * FROM corpus_collection WHERE questions IN (%s);"""

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import jieba
-import uuid
-from words import STOP_WORDS_LIST, YES_WORDS_LIST, NO_WORDS_LIST
+from .words import STOP_WORDS_LIST, YES_WORDS_LIST, NO_WORDS_LIST
 
 __author__ = "Yebax"
 
