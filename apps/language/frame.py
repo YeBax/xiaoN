@@ -321,7 +321,7 @@ class Frame:
         将问题 写入数据库
         更改frame的状态
         """
-        if not mysql_query_where_equal(SQL_QUERY_QUESTIONS, question):
+        if not mysql_query_where_equal(SQL_QUERY_QUESTIONS, question):  # 检查是否已经记录，避免重复
             mysql_insert(SQL_ADD_QUESTIONS, question)     # 收集 未解决的问题
         self.__update_state_code(10)
         return "哎呀~小N~，没有理解你在问什么？但已经记下了咯，知道了就会立即反馈给你哦！现在换一种问法再试试吧！"
