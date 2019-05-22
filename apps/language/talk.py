@@ -63,7 +63,7 @@ class Talk:
         提取出 关键词语
         :return: 关键词列表
         """
-        self.keywords_list = list(set([i for i in self.words_list if i not in STOP_WORDS_LIST or len(i) > 2]))
+        self.keywords_list = list(set([i for i in self.words_list if i not in STOP_WORDS_LIST and len(i) > 1]))
         print("关键词：", self.keywords_list)
 
     def sentiment_classify(self):

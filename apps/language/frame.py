@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import uuid
-import time
+from datetime import datetime
 from collections import Counter
 
 from .talk import Talk, Tags, Questions
@@ -52,7 +52,7 @@ class Frame:
         self.user_id = str(user_id)
         self.talk_list = []     # 收到对话列表
         self.create_time = create_time
-        self.update_time = None
+        self.update_time = create_time
         self.redis_key = None
         self.frame_tag = None
         self.tags_list = []
@@ -70,10 +70,11 @@ class Frame:
 
     def receive_talk(self, talk_msg, talk_time):
         self.frame_wait_next_talk_state = False
-        self.update_time = talk_time
-        word = self._check_words(talk_msg)
+        print("[%s]:%s" % (talk_time, talk_msg))
+        word = self._check_words(talk_msg, talk_time)
         if word != 0:
             return word
+        self.update_time = talk_time
         self.talk_list.append(talk_msg)
 
         while not self.frame_wait_next_talk_state:
@@ -201,22 +202,25 @@ class Frame:
     def _check_questions_process(self, talk_msg):
         pass
 
-    def _check_words(self, talk_msg):
+    def _check_words(self, talk_msg, talk_time):
         """
         处理重复的消息 和 重复发送的消息
         :param
         :return:
         """
-        words = 0
-        if talk_msg.strip() == "":
+
+        if (datetime.strptime(talk_time, "%Y-%m-%d %H:%M:%S") - datetime.strptime(self.update_time, "%Y-%m-%d %H:%M:%S")).seconds < 1:
+            return "你说的太快了，让~小N~缓缓，缓缓......"
+        elif talk_msg.strip() == "":
             self.error_number += 1
-            words =  '嗨？你好像什么都没输入，~小N~不知道你在问什么？'
-        if talk_msg in self.talk_list:
+            return '嗨？你好像什么都没输入，~小N~不知道你在问什么？'
+        elif talk_msg in self.talk_list:
             self.error_number += 1
-            words = "这句...~小N~觉得很眼熟！同学！！！你%s失忆了吗？" % ((self.error_number-1) * '真')
-        if self.error_number > 5:
-            words = "同学~小N~感觉你很无聊哦！"
-        return words
+            return "这句...~小N~觉得很眼熟！同学！！！你%s失忆了吗？" % ((self.error_number-1) * '真')
+        elif self.error_number > 5:
+            return "同学~小N~感觉你很无聊哦！"
+        else:
+            return 0
 
     # ====================================================================================================
     # 私有基础函数方法
@@ -276,6 +280,7 @@ class Frame:
         weight_dict = {}
         for k, v in Counter(tags_list).items():
             weight_dict[k] = v / words_num
+        print(weight_dict)
         return weight_dict
 
     def __questions_weight(self, questions_list, talk):
