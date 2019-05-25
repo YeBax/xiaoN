@@ -39,3 +39,4 @@ SQL_GET_QUESTIONS_FOR_TAGS_ID = """SELECT q.id, q.question FROM (SELECT * FROM c
 SQL_GET_ANSWER = """SELECT answer FROM corpus_queandans  WHERE id = %s;"""
 SQL_ADD_QUESTIONS = """INSERT INTO corpus_collection(questions,create_time,state) VALUES(%s,NOW(),0);"""
 SQL_QUERY_QUESTIONS = """SELECT * FROM corpus_collection WHERE questions IN (%s);"""
+
