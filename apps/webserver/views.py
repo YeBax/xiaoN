@@ -18,13 +18,15 @@ def create_frame():
     sign = request.json['sign']
     if sign != sign_md5(user_id, create_time):
         abort(403)
-
+    print(frame_list)
     if user_id in frame_list:
         json_data = {"code": 1, "msg": "User has created"}
     else:
+        frame_list.append(user_id)
         frame = Frame(user_id, create_time)
         frame_id = frame.get_redis_key()
         json_data = {"code": 0, "msg": "Success", "frame_id": frame_id}
+        frame_list.append(user_id)
         frame_dict[frame_id] = frame
     return jsonify(json_data), 200
 
@@ -45,6 +47,7 @@ def receive():
     sign = request.json['sign']
     if sign != sign_md5(user_id, update_time):
         abort(403)
+
     if frame_id in frame_dict:
         frame = frame_dict[frame_id]
         responses_words = frame.receive_talk(requests_words, update_time)

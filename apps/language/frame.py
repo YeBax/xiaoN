@@ -336,7 +336,7 @@ class Frame:
         根据 用户ID 和 创建会话时间 UUID3 生成 redis_key
         :return:
         """
-        self.redis_key = uuid.uuid3(uuid.NAMESPACE_DNS, str(self.user_id+self.create_time))
+        self.redis_key = str(uuid.uuid3(uuid.NAMESPACE_DNS, str(self.user_id+self.create_time)))
 
 
 
